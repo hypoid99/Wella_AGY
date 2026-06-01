@@ -23,27 +23,18 @@ namespace Wella.Views
         private Rectangle _btnNextRect;
         private readonly List<Rectangle> _dayCellRects = new List<Rectangle>();
         
-        // 우측 관리 패널용 컨트롤들
-        private Panel _pnlRightSide;
-        private Label _lblSelectedDate;
-        private FlowLayoutPanel _flpEvents;
-        private Panel _pnlAddEvent;
-        private TextBox _txtEventTitle;
-        private TextBox _txtEventDesc;
-        private ComboBox _cmbColor;
-        private Button _btnAddEvent;
+        // 우측 관리 패널용 컨트롤들 (제거됨)
         
         public CalendarView()
         {
             this.DoubleBuffered = true;
+            this.ResizeRedraw = true; // 창 크기 변경 시 전체 영역을 즉시 갱신하도록 설정
             this.BackColor = AppConfig.ColorBgDark;
             this.Font = AppConfig.FontBody;
             this.Size = new Size(900, 600);
             
             _currentMonthStart = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
             _selectedDate = DateTime.Today;
-
-            InitializeRightPanel();
         }
 
         public void Initialize(CalendarController controller)
@@ -52,300 +43,11 @@ namespace Wella.Views
             RefreshCalendar();
         }
 
-        private void InitializeRightPanel()
-        {
-            // 우측 패널 (320px 넓이, 일정 상세 및 추가 기능)
-            _pnlRightSide = new Panel
-            {
-                Dock = DockStyle.Right,
-                Width = 320,
-                BackColor = AppConfig.ColorPanelBg,
-                Padding = new Padding(15)
-            };
-            
-            // 테두리 구분선 그리기 위한 패널 페인트 이벤트
-            _pnlRightSide.Paint += (s, e) =>
-            {
-                using (Pen p = new Pen(AppConfig.ColorBorder, 1))
-                {
-                    e.Graphics.DrawLine(p, 0, 0, 0, _pnlRightSide.Height);
-                }
-            };
-
-            // 선택 날짜 헤더
-            _lblSelectedDate = new Label
-            {
-                Dock = DockStyle.Top,
-                Height = 35,
-                ForeColor = AppConfig.ColorTextLight,
-                Font = AppConfig.FontSubtitle,
-                Text = "2026-05-31 일정",
-                TextAlign = ContentAlignment.MiddleLeft
-            };
-
-            // 일정 스크롤 영역
-            _flpEvents = new FlowLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                AutoScroll = true,
-                FlowDirection = FlowDirection.TopDown,
-                WrapContents = false,
-                Padding = new Padding(0, 10, 0, 10)
-            };
-            // FlowLayoutPanel 스크롤 바 너비 고려하여 자식 컨트롤 가로 핏 맞추기
-            _flpEvents.SizeChanged += (s, e) => {
-                foreach (Control c in _flpEvents.Controls)
-                    c.Width = _flpEvents.Width - 25;
-            };
-
-            // 일정 추가 패널 (하단 고정)
-            _pnlAddEvent = new Panel
-            {
-                Dock = DockStyle.Bottom,
-                Height = 240,
-                BackColor = AppConfig.ColorPanelBg,
-                Padding = new Padding(5, 10, 5, 0)
-            };
-
-            Label lblAddTitle = new Label
-            {
-                Text = "새 일정 추가",
-                ForeColor = AppConfig.ColorTextLight,
-                Font = AppConfig.FontBodyBold,
-                Location = new Point(5, 5),
-                AutoSize = true
-            };
-
-            _txtEventTitle = new TextBox
-            {
-                Location = new Point(5, 30),
-                Width = 280,
-                PlaceholderText = "일정 제목을 입력하세요",
-                BackColor = AppConfig.ColorContentBg,
-                ForeColor = AppConfig.ColorTextLight,
-                BorderStyle = BorderStyle.FixedSingle
-            };
-
-            _txtEventDesc = new TextBox
-            {
-                Location = new Point(5, 65),
-                Width = 280,
-                Height = 60,
-                Multiline = true,
-                PlaceholderText = "메모/설명 입력",
-                BackColor = AppConfig.ColorContentBg,
-                ForeColor = AppConfig.ColorTextLight,
-                BorderStyle = BorderStyle.FixedSingle
-            };
-
-            Label lblColor = new Label
-            {
-                Text = "중요도:",
-                ForeColor = AppConfig.ColorTextMuted,
-                Location = new Point(5, 138),
-                Width = 60,
-                AutoSize = true
-            };
-
-            _cmbColor = new ComboBox
-            {
-                Location = new Point(70, 135),
-                Width = 215,
-                DropDownStyle = ComboBoxStyle.DropDownList,
-                BackColor = AppConfig.ColorContentBg,
-                ForeColor = AppConfig.ColorTextLight
-            };
-            _cmbColor.Items.Add(new ColorItem("높음 (Red)", AppConfig.ColorPriorityHigh));
-            _cmbColor.Items.Add(new ColorItem("보통 (Yellow)", AppConfig.ColorPriorityMedium));
-            _cmbColor.Items.Add(new ColorItem("낮음 (Blue)", AppConfig.ColorPriorityLow));
-            _cmbColor.SelectedIndex = 1;
-
-            _btnAddEvent = new Button
-            {
-                Location = new Point(5, 180),
-                Width = 280,
-                Height = 40,
-                Text = "일정 추가",
-                FlatStyle = FlatStyle.Flat,
-                BackColor = AppConfig.ColorAccent,
-                ForeColor = Color.White,
-                Cursor = Cursors.Hand
-            };
-            _btnAddEvent.FlatAppearance.BorderSize = 0;
-            _btnAddEvent.Click += BtnAddEvent_Click;
-
-            // 호버 시 색상 전환 효과
-            _btnAddEvent.MouseEnter += (s, e) => _btnAddEvent.BackColor = AppConfig.ColorAccentHover;
-            _btnAddEvent.MouseLeave += (s, e) => _btnAddEvent.BackColor = AppConfig.ColorAccent;
-
-            _pnlAddEvent.Controls.Add(lblAddTitle);
-            _pnlAddEvent.Controls.Add(_txtEventTitle);
-            _pnlAddEvent.Controls.Add(_txtEventDesc);
-            _pnlAddEvent.Controls.Add(lblColor);
-            _pnlAddEvent.Controls.Add(_cmbColor);
-            _pnlAddEvent.Controls.Add(_btnAddEvent);
-
-            _pnlRightSide.Controls.Add(_flpEvents);
-            _pnlRightSide.Controls.Add(_lblSelectedDate);
-            _pnlRightSide.Controls.Add(_pnlAddEvent);
-
-            this.Controls.Add(_pnlRightSide);
-        }
-
-        private class ColorItem
-        {
-            public string Name { get; }
-            public Color Color { get; }
-            public ColorItem(string name, Color color) { Name = name; Color = color; }
-            public override string ToString() => Name;
-        }
-
-        // 새 일정 등록 처리
-        private void BtnAddEvent_Click(object sender, EventArgs e)
-        {
-            if (string.IsNullOrWhiteSpace(_txtEventTitle.Text))
-            {
-                MessageBox.Show("일정 제목을 입력해주세요.", "알림", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            var colorItem = _cmbColor.SelectedItem as ColorItem;
-            string hexColor = ColorTranslator.ToHtml(colorItem != null ? colorItem.Color : AppConfig.ColorAccent);
-
-            var newEvent = new CalendarEvent
-            {
-                EventDate = _selectedDate,
-                Title = _txtEventTitle.Text.Trim(),
-                Description = _txtEventDesc.Text.Trim(),
-                CategoryColor = hexColor
-            };
-
-            _controller.AddEvent(newEvent);
-            
-            _txtEventTitle.Clear();
-            _txtEventDesc.Clear();
-            
-            RefreshCalendar();
-        }
-
         // 현재 상태를 기반으로 UI 리프레시
         public void RefreshCalendar()
         {
             if (_controller == null) return;
-
-            // 1. 헤더 날짜 업데이트
-            _lblSelectedDate.Text = $"{_selectedDate:yyyy년 MM월 dd일} 일정";
-
-            // 2. 우측 일정 카드 리스트 로드
-            _flpEvents.Controls.Clear();
-            var dayEvents = _controller.GetEventsForDate(_selectedDate);
-
-            if (dayEvents.Count == 0)
-            {
-                Label lblNoEvent = new Label
-                {
-                    Text = "등록된 일정이 없습니다.",
-                    ForeColor = AppConfig.ColorTextMuted,
-                    TextAlign = ContentAlignment.MiddleCenter,
-                    Size = new Size(_flpEvents.Width - 30, 80),
-                    Font = AppConfig.FontBody
-                };
-                _flpEvents.Controls.Add(lblNoEvent);
-            }
-            else
-            {
-                foreach (var ev in dayEvents)
-                {
-                    _flpEvents.Controls.Add(CreateEventCard(ev));
-                }
-            }
-
-            // 3. 달력 화면 다시 그리기 유도
             this.Invalidate();
-        }
-
-        // 아름다운 GDI+ 카드 형태로 일정 표시
-        private Control CreateEventCard(CalendarEvent ev)
-        {
-            Panel card = new Panel
-            {
-                Width = _flpEvents.Width - 25,
-                Height = 85,
-                BackColor = AppConfig.ColorContentBg,
-                Margin = new Padding(0, 0, 0, 8),
-                Padding = new Padding(10)
-            };
-
-            Color accent = ColorTranslator.FromHtml(ev.CategoryColor);
-
-            card.Paint += (s, e) =>
-            {
-                Graphics g = e.Graphics;
-                g.SmoothingMode = SmoothingMode.AntiAlias;
-
-                // 왼쪽의 두꺼운 컬러 테두리바 그리기
-                using (Brush b = new SolidBrush(accent))
-                {
-                    g.FillRectangle(b, 0, 0, 6, card.Height);
-                }
-
-                // 카드 외곽 둥근 선
-                using (Pen p = new Pen(AppConfig.ColorBorder, 1))
-                {
-                    g.DrawRectangle(p, 0, 0, card.Width - 1, card.Height - 1);
-                }
-            };
-
-            Label title = new Label
-            {
-                Text = ev.Title,
-                ForeColor = AppConfig.ColorTextLight,
-                Font = AppConfig.FontBodyBold,
-                Location = new Point(12, 10),
-                Width = card.Width - 55,
-                Height = 20,
-                UseCompatibleTextRendering = true
-            };
-
-            Label desc = new Label
-            {
-                Text = string.IsNullOrWhiteSpace(ev.Description) ? "(메모 없음)" : ev.Description,
-                ForeColor = AppConfig.ColorTextMuted,
-                Font = AppConfig.FontSmall,
-                Location = new Point(12, 32),
-                Width = card.Width - 55,
-                Height = 45,
-                UseCompatibleTextRendering = true
-            };
-
-            // 삭제 버튼 (플랫 X)
-            Button btnDel = new Button
-            {
-                Text = "✕",
-                Font = new Font("Segoe UI", 9, FontStyle.Bold),
-                ForeColor = AppConfig.ColorTextMuted,
-                Size = new Size(25, 25),
-                Location = new Point(card.Width - 35, 10),
-                FlatStyle = FlatStyle.Flat,
-                Cursor = Cursors.Hand
-            };
-            btnDel.FlatAppearance.BorderSize = 0;
-            btnDel.FlatAppearance.MouseDownBackColor = Color.FromArgb(80, 40, 40);
-            btnDel.FlatAppearance.MouseOverBackColor = Color.FromArgb(50, 30, 30);
-            btnDel.Click += (s, e) =>
-            {
-                if (MessageBox.Show("이 일정을 삭제하시겠습니까?", "일정 삭제 확인", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
-                {
-                    _controller.DeleteEvent(ev.Id);
-                    RefreshCalendar();
-                }
-            };
-
-            card.Controls.Add(title);
-            card.Controls.Add(desc);
-            card.Controls.Add(btnDel);
-
-            return card;
         }
 
         // GDI+ 달력 페인팅 메인 로직
@@ -356,7 +58,7 @@ namespace Wella.Views
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
 
-            int calendarWidth = this.Width - _pnlRightSide.Width;
+            int calendarWidth = this.Width;
             int calendarHeight = this.Height;
 
             // 1. 달력 상단 타이틀 영역 렌더링
@@ -500,14 +202,39 @@ namespace Wella.Views
                         }
                     }
 
-                    // 5. 날짜 텍스트 렌더링
+                    // 5. 날짜 텍스트 및 공휴일 렌더링
                     string dayText = cellDate.Day.ToString();
-                    Color numColor = isCurrentMonth ? AppConfig.ColorTextLight : AppConfig.ColorTextMuted;
-                    if (isSelected) numColor = Color.White;
+                    string holidayName = HolidayHelper.GetHolidayName(cellDate);
+                    bool isHoliday = !string.IsNullOrEmpty(holidayName);
+
+                    Color numColor;
+                    if (isSelected)
+                    {
+                        numColor = Color.White;
+                    }
+                    else if (isHoliday)
+                    {
+                        numColor = AppConfig.ColorPriorityHigh; // 공휴일은 붉은색 (Pastel Red)
+                    }
+                    else
+                    {
+                        numColor = isCurrentMonth ? AppConfig.ColorTextLight : AppConfig.ColorTextMuted;
+                    }
 
                     using (Brush numBrush = new SolidBrush(numColor))
                     {
                         g.DrawString(dayText, AppConfig.FontBodyBold, numBrush, cellRect.X + 8, cellRect.Y + 8);
+
+                        // 공휴일 명칭 그리기
+                        if (isHoliday)
+                        {
+                            SizeF numSize = g.MeasureString(dayText, AppConfig.FontBodyBold);
+                            Color holidayTextColor = isSelected ? Color.White : AppConfig.ColorPriorityHigh;
+                            using (Brush holidayBrush = new SolidBrush(holidayTextColor))
+                            {
+                                g.DrawString(holidayName, AppConfig.FontSmall, holidayBrush, cellRect.X + 8 + numSize.Width + 4, cellRect.Y + 10);
+                            }
+                        }
                     }
 
                     // 6. 일정이 존재할 경우 하단 표시 렌더링
@@ -638,6 +365,13 @@ namespace Wella.Views
                     }
 
                     RefreshCalendar();
+
+                    // 다이얼로그 팝업 호출
+                    using (var dlg = new EventDialog(_controller, clickedDate, () => RefreshCalendar()))
+                    {
+                        dlg.ShowDialog(this);
+                    }
+
                     break;
                 }
             }
